@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+{% block head %}
+<style>
+    .radio-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+    }
+
+    @media (min-width: 576px) {
+        .m-frame {
+            margin-left: calc((100vw - 540px) / 2) !important;
+            margin-right: calc((100vw - 540px) / 2) !important;
+        }
+    }
+</style>
+<script>
+    json_data = {{ json_txt | safe }};
+    q_num = location.pathname.replace(/\/+$/, "").split('/').pop();
+    af_flg = false;
+
+
+
+
+
+    window.onload = function () {
+        //top_linkに一つ上の階層のリンクを設定
+        document.getElementById("top_link").href = `/questionnaire/${json_data.title}`;
+        //ローカルストレージにanswer_dataがあるか確認
+        //なければ、../に遷移
+        if (localStorage.getItem(`${json_data.title}_answer`) == null) {
+            location.href = `/questionnaire/${json_data.title}`;
+        }
+        else {
+            document.getElementById("title").innerHTML = `${json_data.title}(${q_num}/${json_data.pr_num})`;
+            document.getElementById("top-img").src = `/static/${json_data.title}/img${q_num}.${json_data.extension}`;
+            //ローカルストレージからanswer_dataを取得
+            answer_data = JSON.parse(localStorage.getItem(`${json_data.title}_answer`));
+            is_data = answer_data.data[`img${q_num}`];
+
+            ans_flg = true;
+            if (is_data == undefined) {
+                ans_flg = false;
+            }
+            q_list = json_data.data
+            for (let i = 0; i < json_data.qs_num; i++) {
+
+                q_data = q_list[`q${i + 1}`];
+                if (q_data["type"] == "int") {
+                    //int_tpをクローン
+                    let int_tp = document.getElementById("int_tp");
+                    let int_obj = int_tp.content.cloneNode(true);
+                    int_obj.querySelector(".pbs").innerHTML = `Q${i + 1}.${q_data["question"]}`;
+                    int_obj.querySelector(".pbs").id = `q${i + 1}_title`;
+                    let radio_tp = document.getElementById("radio_tp");
+                    for (let j = 0; j < q_data["num"]; j++) {
+                        let radio_obj = radio_tp.content.cloneNode(true);
+                        radio_obj.querySelector(".radio_inp").name = `q${i + 1}`;
+                        radio_obj.querySelector(".radio_inp").value = j + 1;
+                        radio_obj.querySelector(".ns").innerHTML = j + 1;
+                        if (ans_flg == true) {
+                            if (is_data[`q${i + 1}`] == j + 1) {
+                                radio_obj.querySelector(".radio_inp").checked = true;
+                            }
+                        }
+
+                        int_obj.querySelector(".selecter").appendChild(radio_obj);
+                    }
+                    //int_objをp-frameに追加
+                    document.querySelector(".p-frame").appendChild(int_obj);
+                }
+                else if (q_data["type"] == "sb-int") {
+                    let sb_int_tp = document.getElementById("sb-int_tp");
+                    let sb_int_obj = sb_int_tp.content.cloneNode(true);
+                    sb_int_obj.querySelector(".pbs").innerHTML = `Q${i + 1}.${q_data["question"]}`;
+                    sb_int_obj.querySelector(".pbs").id = `q${i + 1}_title`;
+                    sb_int_obj.querySelector(".sb-int").id = `q${i + 1}_inp`;
+                    //numを取得して、sb-intのmaxに設定
+                    sb_int_obj.querySelector(".sb-int").max = q_data["num"];
+                    //center-txtのidにq${i+1}_nowを設定
+                    sb_int_obj.querySelector(".center-txt").id = `q${i + 1}_now`;
+                    //numを取得して、max-txtに設定
+                    sb_int_obj.querySelector(".max-txt").innerHTML = q_data["num"];
+                    if (ans_flg == true) {
+                        sb_int_obj.querySelector(".sb-int").value = is_data[`q${i + 1}`];
+                    }
+                    document.querySelector(".p-frame").appendChild(sb_int_obj);
+                    //q${i+1}_inpが変更されたら、q${i+1}_nowを変更する。
+                    document.getElementById(`q${i + 1}_now`).innerHTML = "現在値:" + document.getElementById(`q${i + 1}_inp`).value;
+                    document.getElementById(`q${i + 1}_inp`).oninput = function () {
+                        document.getElementById(`q${i + 1}_now`).innerHTML = "現在値:" + document.getElementById(`q${i + 1}_inp`).value;
+                    }
+
+                }
+                else if (q_data["type"] == "lb-str") {
+                    //lb-str_tpをクローン
+                    let lb_str_tp = document.getElementById("lb-str_tp");
+                    let lb_str_obj = lb_str_tp.content.cloneNode(true);
+                    lb_str_obj.querySelector(".pbs").innerHTML = `Q${i + 1}.${q_data["question"]}`;
+                    lb_str_obj.querySelector(".pbs").id = `q${i + 1}_title`;
+                    lb_str_obj.querySelector(".lb-str_inp").id = `q${i + 1}_inp`;
+                    if (ans_flg == true) {
+                        lb_str_obj.querySelector(".lb-str_inp").value = is_data[`q${i + 1}`];
+                    }
+                    //lb_str_objをp-frameに追加
+                    document.querySelector(".p-frame").appendChild(lb_str_obj);
+                }
+                else if (q_data["type"] == "str") {
+                    //str_tpをクローン
+                    let str_tp = document.getElementById("str_tp");
+                    let str_obj = str_tp.content.cloneNode(true);
+                    str_obj.querySelector(".pbs").innerHTML = `Q${i + 1}.${q_data["question"]}`;
+                    str_obj.querySelector(".pbs").id = `q${i + 1}_title`;
+                    str_obj.querySelector(".str_inp").id = `q${i + 1}_inp`;
+                    if (ans_flg == true) {
+                        str_obj.querySelector(".str_inp").value = is_data[`q${i + 1}`];
+                    }
+                    //str_objをp-frameに追加
+                    document.querySelector(".p-frame").appendChild(str_obj);
+                }
+                else if (q_data["type"] == "cbx") {
+                    //check_tpをクローン
+                    let check_tp = document.getElementById("check_tp");
+                    let check_obj = check_tp.content.cloneNode(true);
+                    check_obj.querySelector(".pbs").innerHTML = `Q${i + 1}.${q_data["question"]}`;
+                    check_obj.querySelector(".pbs").id = `q${i + 1}_title`;
+                    let cbx_tp = document.getElementById("cbx_tp");
+                    //q_dataのcbx_dataのキーを取得
+                    let cbx_data_keys = Object.keys(q_data["cbx_data"]);
+                    for (let j = 0; j < cbx_data_keys.length; j++) {
+                        let cbx_obj = cbx_tp.content.cloneNode(true);
+                        cbx_obj.querySelector(".cbx").name = `q${i + 1}`;
+                        cbx_obj.querySelector(".cbx").value = cbx_data_keys[j];
+                        cbx_obj.querySelector(".cbx_label").innerHTML = q_data["cbx_data"][cbx_data_keys[j]];
+                        if (ans_flg == true) {
+                            if (is_data[`q${i + 1}`].includes(cbx_data_keys[j])) {
+                                cbx_obj.querySelector(".cbx").checked = true;
+                            }
+                        }
+
+                        check_obj.querySelector(".text-start").appendChild(cbx_obj);
+                    }
+                    //check_objをp-frameに追加
+                    document.querySelector(".p-frame").appendChild(check_obj);
+                }
+
+            }
+            //nextとbackを取得する。
+            if (q_num == 1) {
+                back = document.getElementById("back")
+                back.innerHTML = '<i class="bi bi-house-door"></i> トップに戻る';
+                back.onclick = function () {
+                    location.href = "./";
+                }
+                next = document.getElementById("next")
+                next.innerHTML = '次へ <i class="bi bi-arrow-right"></i>';
+                next.onclick = function () {
+                    location.href = `${Number(q_num) + 1}`;
+                }
+            }
+            else if (Number(q_num) == json_data.pr_num) {
+                back = document.getElementById("back")
+                back.innerHTML = '<i class="bi bi-arrow-left"></i> 戻る';
+                back.onclick = function () {
+                    location.href = `${Number(q_num) - 1}`;
+                }
+
+                next = document.getElementById("next")
+                next.innerHTML = '送信 <i class="bi bi-check-circle"></i>';
+                next.onclick = function () {
+                    location.href = "./send";
+                }
+            }
+            else {
+                back = document.getElementById("back")
+                back.innerHTML = '<i class="bi bi-arrow-left"></i> 戻る';
+                back.onclick = function () {
+                    location.href = `${Number(q_num) - 1}`;
+                }
+                next = document.getElementById("next")
+                next.innerHTML = '次へ <i class="bi bi-arrow-right"></i>';
+                next.onclick = function () {
+                    location.href = `${Number(q_num) + 1}`;
+                }
+            }
+        }
+    }
+
+
+    function alertfield_ctr(q, text) {
+        //af_flgがfalseなら、alertlistの中身を空にする。
+        if (af_flg == false) {
+            document.getElementById("alertlist").innerHTML = "";
+
+            window.scrollTo(0, 100);
+            af_flg = true;
+        }
+        //alertlistに追加
+        let alertlist = document.getElementById("alertlist");
+        let alertfield = document.getElementById("alertfield");
+        alertfield.hidden = false;
+        let li = document.createElement("li");
+
+
+
+        //li全体をリンクにして"#q${q}_title"に飛ぶようにする。
+        let a = document.createElement("a");
+        a.href = `#q${q}_title`;
+        a.innerHTML = text;
+        li.appendChild(a);
+        alertlist.appendChild(li);
+    }
+
+
+    function save() {
+        //ローカルストレージに保存
+        let single_answer_data = {}
+        let q_list = json_data.data
+        let s_flg = true;
+        document.getElementById("sc-message").hidden = true;
+        let alertfield = document.getElementById("alertfield");
+        alertfield.hidden = true;
+        for (let i = 0; i < json_data.qs_num; i++) {
+            //この中でエラーが発生したら、../に遷移
+            try {
+                let q_data = q_list[`q${i + 1}`];
+                if (q_data["type"] == "int") {
+                    let radio_inp = document.getElementsByName(`q${i + 1}`);
+                    let flg = false;
+
+                    for (let j = 0; j < radio_inp.length; j++) {
+                        if (radio_inp[j].checked) {
+                            single_answer_data[`q${i + 1}`] = radio_inp[j].value;
+                            flg = true;
+                        }
+                    }
+                    if (flg == false) {
+                        alertfield_ctr(i + 1, `Q${i + 1}の回答が選択されていません。`);
+                        s_flg = false;
+                    }
+                }
+                else if (q_data["type"] == "sb-int") {
+                    let sb_int_inp = document.getElementById(`q${i + 1}_inp`);
+                    single_answer_data[`q${i + 1}`] = sb_int_inp.value;
+                }
+                else if (q_data["type"] == "lb-str") {
+                    let lb_str_inp = document.getElementById(`q${i + 1}_inp`);
+                    if (lb_str_inp.value == "") {
+                        alertfield_ctr(i + 1, `Q${i + 1}の回答が入力されていません。`);
+                        s_flg = false;
+                    }
+                    else {
+                        single_answer_data[`q${i + 1}`] = lb_str_inp.value;
+                    }
+                }
+                else if (q_data["type"] == "str") {
+                    let str_inp = document.getElementById(`q${i + 1}_inp`);
+                    if (str_inp.value == "") {
+                        alertfield_ctr(i + 1, `Q${i + 1}の回答が入力されていません。`);
+                        s_flg = false;
+                    }
+                    else {
+                        single_answer_data[`q${i + 1}`] = str_inp.value;
+                    }
+                }
+                else if (q_data["type"] == "cbx") {
+                    let cbx_inp = document.getElementsByName(`q${i + 1}`);
+                    cbx_list = [];
+                    for (let j = 0; j < cbx_inp.length; j++) {
+                        if (cbx_inp[j].checked) {
+                            cbx_list.push(cbx_inp[j].value);
+                        }
+                    }
+                    single_answer_data[`q${i + 1}`] = cbx_list;
+                }
+
+            }
+            catch {
+                alert(`Q${i + 1}の回答を保存する際にエラーが発生しました。`);
+            }
+        }
+        af_flg = false;
+        if (s_flg == true) {
+            answer_data = JSON.parse(localStorage.getItem(`${json_data.title}_answer`));
+            answer_data.data[`img${q_num}`] = single_answer_data;
+            localStorage.setItem(`${json_data.title}_answer`, JSON.stringify(answer_data));
+            document.getElementById("sc-message").hidden = false;
+
+        }
+    }
+</script>
+
+
+{% endblock head %}
+{% block header %}
+<div class="text-center m-frame mb-2">
+    <div class="top-frame">
+        <div class="h1 my-2" id="title"></div>
+        <img class="w-75 mb-3" id="top-img">
+    </div>
+    <div class="alert alert-warning text-start" role="alert" id="alertfield" hidden>
+        <div class="h5" name="alerttitle"><i class="bi bi-exclamation-triangle"></i> 問題が発生しました。</div>
+
+        <ul id="alertlist"></ul>
+    </div>
+    <div class="p-frame"></div>
+    <div class="b-frame">
+        <div>
+            <button class="btn btn-outline-success px-5 m-3" onclick="save()">保存する</button>
+            <div class="text-success" id="sc-message" hidden><i class="bi bi-check2-circle"></i> 正常に記録されました。</div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button class="btn btn-outline-primary m-3 px-sm-5 px-md-5" id="back"></button>
+            </div>
+            <div class="col">
+                <button class="btn btn-outline-primary m-3 px-sm-5 px-md-5" id="next"></button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<template id="int_tp">
+    <div class="ps mb-2">
+        <div class="h5 pbs"></div>
+        <div class="row selecter mx-2">
+        </div>
+    </div>
+</template>
+
+<template id="radio_tp">
+    <div class="col px-0">
+        <div class="form-check radio-button mx-0">
+            <input class="form-check-input radio_inp" type="radio">
+        </div>
+        <div class="ns"></div>
+    </div>
+</template>
+
+<template id="str_tp">
+    <div class="ps mx-2 mb-2">
+        <div class="h5 pbs"></div>
+        <input type="text" class="form-control str_inp" placeholder="回答を入力してください">
+    </div>
+</template>
+
+<template id="lb-str_tp">
+    <div class="ps mx-2 mb-2">
+        <div class="h5 pbs"></div>
+        <textarea class="form-control lb-str_inp" rows="5" style="resize: none;" placeholder="回答を入力してください"></textarea>
+    </div>
+</template>
+
+<template id="sb-int_tp">
+    <div class="ps mb-2">
+        <div class="h5 pbs"></div>
+        <div class="mx-auto" style="width: 90%;">
+            <input type="range" class="form-range sb-int" min="0">
+            <div class="row">
+                <div class="col-1">
+                    <div class="text-start min-txt">0</div>
+                </div>
+                <div class="col-10">
+                    <div class="text-center center-txt">1</div>
+                </div>
+                <div class="col-1">
+                    <div class="text-end max-txt">100</div>
+                </div>
+            </div>
+        </div>
+</template>
+
+<template id="check_tp">
+    <div class="ps mb-2">
+        <div class="h5 pbs"></div>
+        <div style="margin-left: 15%;" class="text-start">
+
+        </div>
+    </div>
+</template>
+<template id="cbx_tp">
+    <div class="form-check">
+        <input class="form-check-input cbx" type="checkbox">
+        <label class="form-check-label cbx_label"></label>
+    </div>
+</template>
+
+
+
+
+
+
+
+{% endblock header %}

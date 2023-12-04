@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block head %}
+<style>
+    
+    @media (min-width: 576px) {
+        .m-frame {
+            margin-left: calc((100vw - 540px) / 2)!important;
+            margin-right: calc((100vw - 540px) / 2)!important;
+        }
+    }
+</style>
+<script>
+    json_data={{ json_txt|safe}};
+
+    window.onload = function () {
+        document.getElementById("title").innerHTML = json_data.title;
+        //top_linkに現在のページのリンクを設定
+        document.getElementById("top_link").href = `/questionnaire/${json_data.title}`;
+        //answer_dataが存在するか確認
+        if (localStorage.getItem(`${json_data.title}_answer`) != null) {
+            document.getElementById("alert-rs").hidden = false;
+            document.getElementById("rs").onclick = function () {
+                location.href = `/questionnaire/${json_data.title}/send`;
+            }
+        }
+    }
+    function get_name() {
+        var name = document.getElementById("name").value;
+        if (name == "") {
+            alert("名前を入力してください");
+            return;
+        }
+        answer_data={"name":name,data:{}};
+        //ローカルストレージに保存
+        localStorage.setItem(`${json_data.title}_answer`, JSON.stringify(answer_data));
+        //ページ遷移
+        location.href =`/questionnaire/${json_data.title}/1`;
+    }
+</script>
+{% endblock head %}
+{% block header %}
+<div class="text-center m-frame mb-5">
+    <div class="h1 my-5" id="title"></div>
+    <div class="alert alert-warning text-start mx-2" id="alert-rs" role="alert" hidden>
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>
+            既に回答データが存在します。<br>
+            データを回答データを活用する場合は、右下の「回答状況」のボタンを押してください。<br>
+            データを初期化したうえで回答する場合は、氏名を入力して、下の「始める」のボタンを押してください。
+        </div>
+        <div class="d-grid gap-2 d-flex justify-content-end">
+            <button class="btn btn-primary" type="button" id="rs">回答状況</button>
+          </div>
+    </div>
+    <div class="h1 my-5">ご協力感謝します。</div>
+    <div id="description">
+        <p>注意事項</p>
+        <ul class="mx-5 text-start">
+            <li> 同一端末、同一ブラウザのみ記録が保持されます。</li>
+            <li>名前の書き換えが起こった場合、回答データはすべて削除されます。</li>
+            <li>ページごとに保存ボタンを押してください。</li>
+
+        </ul>
+    </div>
+    <div class="my-5">
+        <label for="name" class="form-label">氏名</label>
+        <input class="form-control" id="name" aria-describedby="emailHelp">
+    </div>
+    
+    <button type="button" class="btn btn-primary px-5" onclick="get_name()">始める</button>
+
+</div>
+{% endblock header %}

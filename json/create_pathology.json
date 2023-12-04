@@ -1,0 +1,23 @@
+{
+  "pr_num": 3,
+  "title": "create_pathology",
+  "qs_num": 3,
+  "extension": "jpg",
+  "data": {
+    "q1":{
+      "question": "この画像の本物ぽっさを判定してください(本物=100)",
+      "type": "sb-int",
+      "num": 100
+    },
+    "q2":{
+      "question": "配列の再現性を評価してください。",
+      "type": "sb-int",
+      "num": 100
+    },
+    "q3":{
+      "question": "細胞核の再現性を評価してください",
+      "type": "sb-int",
+      "num": 100
+    }
+  }
+}

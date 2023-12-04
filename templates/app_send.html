@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block head %}
+<style>
+    @media (min-width: 576px) {
+        .m-frame {
+            margin-left: calc((100vw - 540px) / 2) !important;
+            margin-right: calc((100vw - 540px) / 2) !important;
+        }
+    }
+
+    .link {
+        cursor: pointer;
+    }
+
+    .link:hover {
+        background-color: #a3a3a3;
+    }
+</style>
+
+<script>
+    json_data = {{ json_txt | safe }};
+
+    if (localStorage.getItem(`${json_data.title}_answer`) == null) {
+        location.href = `/questionnaire/${json_data.title}`;
+    }
+    
+    window.onload = function () {
+        document.getElementById("title").innerHTML = json_data.title;
+        document.getElementById("top_link").href = `/questionnaire/${json_data.title}`;
+        //answer_dataを取得
+        let answer_data = JSON.parse(localStorage.getItem(`${json_data.title}_answer`));
+        all_data = answer_data.data;
+
+        count=0
+        //回答が全てのページで完了しているか確認
+        for (let i = 1; i <= json_data.pr_num; i++) {
+            let li_str = ""
+            if (all_data[`img${i}`] == undefined) {
+
+                li_str = `<li class="list-group-item link py-0" onclick="location.href='/questionnaire/${json_data.title}/${i}'"><i class="bi bi-dash-lg text-secondary"></i>   IMG${i}</li>`;
+                count+=1
+            }
+            else {
+                li_str = `<li class="list-group-item link py-0" onclick="location.href='/questionnaire/${json_data.title}/${i}'"><i class="bi bi-check2-circle text-success"></i>   IMG${i}</li>`;
+            }
+            document.getElementById("ans_list").innerHTML += li_str;
+        }
+        console.log(count)
+        console.log(json_data.pr_num)
+        if((json_data.pr_num-count)==json_data.pr_num){
+            document.getElementById("ar_s").hidden=false;
+            document.getElementById("sb").disabled=false;
+            document.getElementById("sb").innerHTML='送信 <i class="bi bi-send-check"></i>';
+        }
+        else{
+            document.getElementById("ar_w").hidden=false;
+            document.getElementById("sb").innerHTML='送信 <i class="bi bi-send-dash"></i>';
+        }
+        document.getElementById("ans_header").innerHTML += `(${json_data.pr_num - count}/${json_data.pr_num})`;
+    }
+
+    async function send_data() {
+        let answer_data = JSON.parse(localStorage.getItem(`${json_data.title}_answer`));
+        console.log(send_data);
+        const res = await fetch(`/api/send/${json_data.title}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(answer_data),
+        });
+        const json = await res.json();
+        console.log(json);
+        if (json.status == "ok") {
+            localStorage.removeItem(`${json_data.title}_answer`);
+            location.href = "/appreciate"
+        }
+        else {
+            alert("送信に失敗しました。");
+        }
+    }
+</script>
+{% endblock head %}
+{% block header %}
+<div class="text-center m-frame mb-5">
+    <div class="h1 my-5" id="title"></div>
+
+    <div class="alert alert-warning text-start" role="alert" id="ar_w" hidden>
+        <div class="row">
+            <div class="col-1">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="col-11">
+                未回答のページがあります。<br>
+                全てのページの回答を完了すると送信ボタンが有効になります。
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-success text-start" role="alert" id="ar_s" hidden>
+        <div class="row">
+            <div class="col-1">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+            <div class="col-11">
+                全てページの回答が完了しました。<br>
+                下記の送信ボタンからデータの送信を行ってください。<br>
+                ご協力ありがとうございます。
+            </div>
+        </div>
+    </div>
+    
+    <button class="btn btn-outline-primary px-5 m-3" id="sb" onclick="send_data()" disabled></button>
+    <div class="card mx-auto" style="width: 90%;">
+        <div class="card-header" id="ans_header">
+            回答状況
+        </div>
+
+        <ul class="list-group list-group-flush text-start" id="ans_list" style="font-size:21px;">
+        </ul>
+    </div>
+
+</div>
+
+{% endblock header %}
